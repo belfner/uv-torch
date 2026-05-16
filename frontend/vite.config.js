@@ -2,7 +2,7 @@ import { resolve } from 'path'
 
 export default {
   root: resolve(__dirname, '.'),
-  base: '/torch-uv/',
+  base: process.env.VITE_BASE || '/torch-uv/',
   build: {
     outDir: 'dist'
   },

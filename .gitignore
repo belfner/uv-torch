@@ -26,3 +26,7 @@ Thumbs.db
 
 # Build artifacts
 *.tar.gz
+
+# Deploy
+.env
+traefik/acme/

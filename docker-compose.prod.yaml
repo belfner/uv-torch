@@ -1,0 +1,19 @@
+name: torch-uv
+services:
+  frontend:
+    build:
+      args:
+        VITE_BASE: "${VITE_BASE}"
+    restart: unless-stopped
+    networks: [web]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.torch-uv.rule=${TRAEFIK_RULE}"
+      - "traefik.http.routers.torch-uv.entrypoints=websecure"
+      - "traefik.http.routers.torch-uv.tls.certresolver=le"
+      - "traefik.http.services.torch-uv.loadbalancer.server.port=80"
+  backend:
+    restart: unless-stopped
+networks:
+  web:
+    external: true
