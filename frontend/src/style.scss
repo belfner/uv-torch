@@ -1,17 +1,49 @@
-// Custom variables
-$primary: #ff6b35;
-$dark: #0f0f0f;
-$secondary: #2a2a2a;
-$success: #4CAF50;
-$info: #2196F3;
-$body-bg: $dark;
-$body-color: #e0e0e0;
-$card-bg: #1a1a1a;
-$card-border-color: #2a2a2a;
-$input-bg: #252525;
-$input-border-color: #333;
-$input-color: #e0e0e0;
-$input-focus-border-color: $primary;
+// ============================================================
+// E2 - Design tokens: orange-on-graphite. The accent is the
+// single brand signal; everything structural is monochrome
+// graphite. The SCSS $vars feed Bootstrap's compile-time
+// theming; the :root custom properties are the documented
+// runtime token surface that the custom/app rules consume.
+// ============================================================
+
+// Graphite scale (page canvas -> raised surfaces)
+$surface-0: #0f0f0f;    // page canvas
+$surface-1: #1a1a1a;    // cards
+$surface-2: #252525;    // inputs / raised
+$border:    #2a2a2a;    // hairline dividers / card borders
+$border-strong: #333;   // input borders
+$text:      #e0e0e0;    // primary text
+// A1: #949494 measures >=4.5:1 on #0f0f0f, #1a1a1a and #252525.
+// E3's texture sits at <=0.02 alpha so it does not move these ratios.
+$text-muted: #949494;
+
+// The single signal colour (matches the favicon #FF6A35)
+$accent: #ff6b35;
+
+// Genuine semantic states only (A3) - never used as brand signal
+$state-success: #4CAF50;
+$state-danger:  #dc3545;
+$state-info:    #2196F3;
+
+// The generated-config "screen"
+$code-bg:     #0d1117;
+$code-border: #30363d;
+$code-text:   #e6edf3;
+
+// --- Bootstrap variable bindings (compile-time theming) ---
+$primary: $accent;
+$dark: $surface-0;
+$secondary: $border;
+$success: $state-success;
+$info: $state-info;
+$body-bg: $surface-0;
+$body-color: $text;
+$card-bg: $surface-1;
+$card-border-color: $border;
+$input-bg: $surface-2;
+$input-border-color: $border-strong;
+$input-color: $text;
+$input-focus-border-color: $accent;
 
 // Import Bootstrap
 @import "bootstrap/scss/bootstrap";
@@ -19,25 +51,72 @@ $input-focus-border-color: $primary;
 // Import Bootstrap Icons
 @import "bootstrap-icons/font/bootstrap-icons.css";
 
-// A1: accessible muted text on the dark surfaces.
-// #949494 measures >=4.5:1 on $dark (#0f0f0f), $card-bg (#1a1a1a) and
-// $input-bg (#252525); ratios re-verified during implementation.
-$accessible-muted: #949494;
+// Back-compat alias so existing rules keep compiling.
+$accessible-muted: $text-muted;
 
+// --- Runtime token surface (documented; consumed by custom rules) ---
 :root {
-  --bs-secondary-color: #{$accessible-muted};
-  --bs-tertiary-color: #{$accessible-muted};
+  --surface-0: #{$surface-0};
+  --surface-1: #{$surface-1};
+  --surface-2: #{$surface-2};
+  --border: #{$border};
+  --border-strong: #{$border-strong};
+  --text: #{$text};
+  --text-muted: #{$text-muted};
+
+  // Primary brand signal - the favicon orange. Carries inputs,
+  // actions, focus, active selection, the generated-config edge.
+  --accent: #{$accent};
+  --accent-strong: #{darken($accent, 8%)};
+  --accent-contrast: #fff;
+  // Low-alpha accent washes for edges/glow
+  --accent-hairline: #{rgba($accent, 0.28)};
+  --accent-glow: #{rgba($accent, 0.22)};
+
+  // Cool complementary - the secondary signal, used sparingly on the
+  // result/summary side (info icons) so it never competes with orange
+  // for the primary action. #2dd4bf measures >=7:1 on #1a1a1a/#252525.
+  --accent-cool: #2dd4bf;
+  --accent-cool-strong: #{darken(#2dd4bf, 10%)};
+
+  --state-success: #{$state-success};
+  --state-danger: #{$state-danger};
+  --state-info: #{$state-info};
+
+  --code-bg: #{$code-bg};
+  --code-border: #{$code-border};
+  --code-text: #{$code-text};
+
+  // A1: Bootstrap muted/tertiary text routed through the token
+  --bs-secondary-color: var(--text-muted);
+  --bs-tertiary-color: var(--text-muted);
 }
 
 // Custom styles
+// E1: IBM Plex Sans Condensed is the body/display face, self-hosted
+// via @fontsource (latin subset). System stack stays as the fallback
+// while the woff2 swaps in (font-display: swap from @fontsource).
 body {
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: 'IBM Plex Sans Condensed', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+  // E3: a faint graphite grid - structure you feel more than see.
+  // Alpha kept <=0.02 so A1/A2 contrast on the surfaces is unchanged.
+  background-color: var(--surface-0);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: -1px -1px;
+  background-attachment: fixed;
 }
 
-// Text gradient for header
+// Vivid warm gradient (orange -> amber, same warm family - not the
+// cool secondary). High presence on near-black so the heavier,
+// non-condensed title reads bold instead of washed out.
 .text-gradient {
-  background: linear-gradient(135deg, $primary, #ff8c00);
+  background: linear-gradient(135deg, #ff6b35, #ff8c00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -49,7 +128,11 @@ body {
   padding: 0.5rem 0 1.25rem 0;
 }
 
+// The title uses full (non-condensed) IBM Plex Sans 700 so it has
+// mass; the condensed face stays for the rest of the UI.
 .app-title {
+  font-family: 'IBM Plex Sans', 'IBM Plex Sans Condensed', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 2.625rem;
   font-weight: 700;
   letter-spacing: -0.5px;
@@ -159,11 +242,19 @@ body {
   right: 0;
 }
 
-// The Compute Version meta line and the Include CPU helper line each
-// swap between a short and a longer message; in the narrow rail the
-// longer one wraps to a second line. Reserve two lines for both so the
-// panel height stays constant no matter which message is shown.
-#computeVersionGroup .dropdown-meta,
+// The Compute Version meta line swaps between a count and a short
+// context message. Keep it to a single, non-wrapping line so spacing
+// to the Include CPU switch stays tight and the panel never jumps.
+#computeVersionGroup .dropdown-meta {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// The Include CPU helper sits at the bottom of the card and its
+// messages differ enough to wrap; reserve two lines so the card
+// height stays constant as the message changes.
 #includeCPUHelp {
   display: block;
   min-height: 3em;
@@ -197,16 +288,25 @@ body {
 }
 
 // Code output styling
+// E1: IBM Plex Mono is the code face. E3: the block reads as an inset
+// device "screen" - recessed, with a hairline accent edge at the top
+// (the single signal marking the generated artifact).
 #configOutput,
 #commandOutput {
-  font-family: 'Cascadia Code', 'SF Mono', Monaco, 'Inconsolata', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  font-family: 'IBM Plex Mono', 'Cascadia Code', 'SF Mono', Monaco,
+    'Inconsolata', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
   font-size: 0.9rem;
   line-height: 1.6;
-  background-color: #0d1117;
-  border: 1px solid #30363d;
+  position: relative;
+  background-color: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-top: 2px solid var(--accent);
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.55);
 
+  // A3/E2: code text is neutral light, not green. Green is reserved
+  // for genuine success feedback (the inline "Copied" flash).
   code {
-    color: $success;
+    color: var(--code-text);
   }
 }
 
@@ -222,9 +322,7 @@ body {
   }
 }
 
-// Output section animation
 #outputSection {
-  animation: fadeInUp 0.5s ease;
   position: relative;
 }
 
@@ -233,10 +331,17 @@ body {
   margin-bottom: 1rem;
 }
 
-@keyframes fadeInUp {
+// ============================================================
+// E4 - One orchestrated motion moment: a single staggered
+// page-load reveal. Supersedes C5's animation half (the green
+// pulse is gone). No glow/pulse on content populate. All motion
+// lives inside `prefers-reduced-motion: no-preference`, so a
+// user who asks for reduced motion gets no animation at all.
+// ============================================================
+@keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -244,33 +349,26 @@ body {
   }
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba($success, 0.4);
+@media (prefers-reduced-motion: no-preference) {
+  // One staggered page-load reveal: header -> input rail -> output.
+  .app-header {
+    animation: reveal 0.45s ease both;
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba($success, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba($success, 0);
-  }
-}
 
-// C5: pulse only on a real content change; all motion respects the
-// user's reduced-motion preference.
-.output-update {
-  animation: pulse 0.5s ease;
+  .sidebar-col {
+    animation: reveal 0.45s ease 0.08s both;
+  }
+
+  .options-col {
+    animation: reveal 0.45s ease 0.16s both;
+  }
+
+  .output-col {
+    animation: reveal 0.45s ease 0.24s both;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #outputSection {
-    animation: none;
-  }
-
-  .output-update {
-    animation: none;
-  }
-
   html {
     scroll-behavior: auto;
   }
@@ -433,15 +531,37 @@ hr {
   --bs-gutter-y: 1.5rem;
 }
 
-// Desktop: two compact control columns + a dominant output column
-@media (min-width: 992px) {
+// --------------------------------------------------
+// Three-tier responsive layout. Critical points are derived from the
+// minimum comfortable content width of each card, not device
+// breakpoints, so columns shrink only until content would clip:
+//
+//   * control card (Environment / Compute / Packages): ~300px - the
+//     "Current Selection / Clear All" header row and the large
+//     placeholder dropdowns stop fitting below this.
+//   * output card: ~380px - the "Add to your pyproject.toml:" heading
+//     and its Copy button share one row above this width.
+//
+// Stage 1 (>= 1080px): 3 columns. 300 + 300 + 380 + 32 gap + 48
+//   container padding ~= 1060, rounded up for headroom.
+// Stage 2 (768 - 1079.98px): 2 columns - Environment + Compute/Packages
+//   stacked in the left column, output in the right. 300 + 380 + 16
+//   gap + 48 padding ~= 744, rounded up.
+// Stage 3 (< 768px): every card stacked in one column.
+//
+// Within each stage minmax() lets the columns flex down to (but never
+// below) their content minimum before the next stage takes over.
+// --------------------------------------------------
+
+// Shared grid-cell normalisation: drop Bootstrap's flex column sizing
+// so the CSS grid template is the single source of column width.
+@media (min-width: 768px) {
   .row.config-grid {
     display: grid !important;
-    grid-template-columns: 1.25fr 1.25fr 4fr;
-    column-gap: 0.5rem;
-    row-gap: 0.5rem;
     margin-left: 0 !important;
     margin-right: 0 !important;
+    column-gap: 1rem;
+    row-gap: 1rem;
   }
 
   .row.config-grid > [class*="col-"] {
@@ -452,15 +572,41 @@ hr {
   }
 }
 
-// Tablet/small-desktop: a touch more breathing room between columns
-@media (max-width: 1199px) and (min-width: 992px) {
+// Stage 2: two columns. The left column carries both control cards
+// stacked (rows 1 and 2); the output card fills the right column
+// across both rows.
+@media (min-width: 768px) and (max-width: 1079.98px) {
   .row.config-grid {
-    column-gap: 1rem;
+    grid-template-columns: minmax(300px, 1fr) minmax(380px, 2fr);
+  }
+
+  .sidebar-col {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .options-col {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .output-col {
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 }
 
-// Below desktop the grid falls back to the natural stacked flow
-@media (max-width: 991px) {
+// Stage 1: three columns side by side.
+@media (min-width: 1080px) {
+  .row.config-grid {
+    grid-template-columns:
+      minmax(300px, 1.5fr) minmax(300px, 1.5fr) minmax(380px, 4fr);
+  }
+}
+
+// Stage 3: below the two-column minimum, fall back to natural stacked
+// flow so no card is forced narrower than its content.
+@media (max-width: 767.98px) {
   .row.config-grid {
     display: block !important;
   }
@@ -468,7 +614,11 @@ hr {
   .config-grid [class*="col-"] {
     margin-bottom: 1rem;
   }
+}
 
+// The Current Selection card only sticks while the 3-column layout
+// gives it a tall neighbour to scroll against.
+@media (max-width: 1079.98px) {
   .row.config-grid .sticky-lg-top {
     position: static;
   }
@@ -504,11 +654,14 @@ hr {
   overflow-x: auto;
 }
 
+// The install command is a single short line; wrap it rather than
+// scroll, so there is no horizontal scrollbar on the command box.
 #commandOutput {
   min-height: 3.55rem;
-  max-height: 3.55rem;
+  white-space: pre-wrap;
+  word-break: break-all;
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 // Switch + label kept together; each switch is its own row (B4 stacking)
@@ -519,6 +672,13 @@ hr {
   margin-top: 1rem;
 }
 
+// The Include CPU switch follows the Compute Version meta line directly,
+// so the full B4 inter-switch gap reads as a gulf there. Pull it back to
+// the normal field-to-control spacing.
+.form-check.form-switch:has(#includeCPU) {
+  margin-top: 0.5rem;
+}
+
 // --------------------------------------------------
 // 4) Slim down that icon‑to‑text gap
 // --------------------------------------------------
@@ -526,6 +686,25 @@ hr {
 .form-label i {
   margin-right: 0.25rem !important;
 }
+
+// Two-signal colour system: orange (.text-primary) carries the input
+// controls and brand; the cool complementary carries the result and
+// summary side (.text-info on the Current Selection and Generated
+// Configuration headers). Bootstrap's .text-info is !important, so the
+// retune must be too. Green (.text-success) stays reserved for genuine
+// success feedback only (the inline "Copied" flash).
+.text-info {
+  color: var(--accent-cool) !important;
+}
+
+// E3: subtle depth instead of flat panels - a hairline top edge
+// highlight and a token-driven border. Restraint, not maximalism.
+.card {
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
 
 // --------------------------------------------------
 // OPTIONAL: If you want your selects to sit a little closer
