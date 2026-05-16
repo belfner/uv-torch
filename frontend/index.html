@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="%BASE_URL%favicon.ico">
+  <title>PyTorch uv Configuration Generator</title>
+  <script type="module" src="./src/main.js"></script>
+</head>
+
+<body>
+  <div class="container-fluid px-3 px-lg-4 py-4">
+    <header class="text-center">
+      <h1 class="display-4">
+        <span class="text-gradient">PyTorch</span> uv Configuration Generator
+      </h1>
+      <p class="lead text-muted">Generate UV package manager configuration for PyTorch installations</p>
+    </header>
+
+    <div class="row config-grid g-3 g-lg-4">
+      <!-- Sidebar - moved to first position -->
+      <div class="col-12 col-lg-3 col-xl-2 sidebar-col">
+        <!-- Block 2: Platform & Python Version -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-start align-items-center mb-3">
+              <h5 class="card-title">
+                <i class="bi bi-gear text-primary me-2"></i>
+                Environment <small class="text-muted">(Optional)</small>
+              </h5>
+
+
+            </div>
+            <!-- Platform -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="platform" class="form-label fw-semibold mb-0">
+                  <i class="bi bi-pc-display text-primary me-1"></i>
+                  Platform
+                </label>
+                <button class="btn btn-sm btn-link text-danger reset-btn" data-field="platform">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                  Reset
+                </button>
+              </div>
+              <select id="platform" class="form-select form-select-lg mt-2">
+                <option value="">Select platform...</option>
+              </select>
+            </div>
+            <!-- Python Version -->
+            <div class="mb-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="pythonVersion" class="form-label fw-semibold mb-0">
+                  <i class="bi bi-code-square text-primary me-1"></i>
+                  Python Version
+                </label>
+                <button class="btn btn-sm btn-link text-danger reset-btn" data-field="pythonVersion">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                  Reset
+                </button>
+              </div>
+              <select id="pythonVersion" class="form-select form-select-lg mt-2">
+                <option value="">Select Python version...</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="card shadow-sm sticky-lg-top" style="top: 2rem;">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="card-title">
+                <i class="bi bi-info-circle text-info me-2"></i>
+                Current Selection
+              </h5>
+              <button id="clearAllBtn" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-x-circle me-1"></i>
+                Clear All
+              </button>
+            </div>
+            <div id="selectionsSummary">
+              <p class="text-muted fst-italic">No selections made yet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Options column - moved to second position -->
+      <div class="col-12 col-lg-3 col-xl-2 options-col">
+        <!-- Block 1: PyTorch & Compute Options -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body p-4">
+            <h5 class="card-title mb-4">
+              <i class="bi bi-sliders text-primary me-2"></i>
+              PyTorch & Compute Options
+            </h5>
+            <!-- PyTorch Version -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="pytorchVersion" class="form-label fw-semibold mb-0">
+                  <i class="bi bi-fire text-primary me-1"></i>
+                  PyTorch Version
+                </label>
+                <button class="btn btn-sm btn-link text-danger reset-btn" data-field="pytorchVersion">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                  Reset
+                </button>
+              </div>
+              <select id="pytorchVersion" class="form-select form-select-lg mt-2">
+                <option value="">Select PyTorch version...</option>
+              </select>
+            </div>
+            <!-- Compute Type -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="computeType" class="form-label fw-semibold mb-0">
+                  <i class="bi bi-gpu-card text-primary me-1"></i>
+                  Compute Type
+                </label>
+                <button class="btn btn-sm btn-link text-danger reset-btn" data-field="computeType">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                  Reset
+                </button>
+              </div>
+              <select id="computeType" class="form-select form-select-lg mt-2">
+                <option value="">Select compute type...</option>
+              </select>
+            </div>
+            <!-- Compute Version -->
+            <div class="mb-0" id="computeVersionGroup">
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="computeVersion" class="form-label fw-semibold mb-0">
+                  <i class="bi bi-badge-vr text-primary me-1"></i>
+                  Compute Version
+                </label>
+                <button class="btn btn-sm btn-link text-danger reset-btn" data-field="computeVersion">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                  Reset
+                </button>
+              </div>
+              <select id="computeVersion" class="form-select form-select-lg mt-2" disabled>
+                <option value="">Select compute version...</option>
+              </select>
+              <small class="text-muted">Available after selecting a GPU compute type</small>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="includeCPU" disabled />
+              <label class="form-check-label" for="includeCPU">
+                Include <code>CPU</code>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Block 3: Additional Packages -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body p-4">
+            <h5 class="card-title mb-3">
+              <i class="bi bi-box-seam text-primary me-2"></i>
+              Additional Packages
+            </h5>
+            <div class="row">
+              <div class="col-md-6 mb-3 mb-md-0">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="includeTorchvision" />
+                  <label class="form-check-label" for="includeTorchvision">
+                    Include <code>torchvision</code>
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="includeTorchaudio" />
+                  <label class="form-check-label" for="includeTorchaudio">
+                    Include <code>torchaudio</code>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generated Configuration column - moved to third position -->
+      <div class="col-12 col-lg-6 col-xl-8 output-col">
+        <div id="outputSection" class="card shadow-sm mb-4">
+          <div class="card-body p-4">
+            <h5 class="card-title mb-4">
+              <i class="bi bi-file-earmark-code text-success me-2"></i>
+              Generated Configuration
+            </h5>
+
+            <!-- pyproject.toml -->
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-muted mb-0">Add to your <code>pyproject.toml</code>:</h6>
+                <button id="copyConfigBtn" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-clipboard"></i>
+                  Copy
+                </button>
+              </div>
+              <pre id="configOutput" class="bg-dark text-light p-3 rounded"></pre>
+            </div>
+
+            <!-- Install Command -->
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-muted mb-0">Run this command to install:</h6>
+                <button id="copyCommandBtn" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-clipboard"></i>
+                  Copy
+                </button>
+              </div>
+              <pre id="commandOutput" class="bg-dark text-light p-3 rounded"></pre>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2">
+              <button id="copyAllBtn" class="btn btn-outline-secondary">
+                <i class="bi bi-clipboard-plus me-2"></i>
+                Copy Both
+              </button>
+              <button id="downloadBtn" class="btn btn-outline-secondary">
+                <i class="bi bi-download me-2"></i>
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="notificationToast" class="toast align-items-center text-white" role="alert" aria-live="assertive"
+      aria-atomic="true" data-bs-delay="3000">
+      <div class="d-flex">
+        <div class="toast-body"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

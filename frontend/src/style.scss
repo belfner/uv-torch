@@ -1,0 +1,508 @@
+// Custom variables
+$primary: #ff6b35;
+$dark: #0f0f0f;
+$secondary: #2a2a2a;
+$success: #4CAF50;
+$info: #2196F3;
+$body-bg: $dark;
+$body-color: #e0e0e0;
+$card-bg: #1a1a1a;
+$card-border-color: #2a2a2a;
+$input-bg: #252525;
+$input-border-color: #333;
+$input-color: #e0e0e0;
+$input-focus-border-color: $primary;
+
+// Import Bootstrap
+@import "bootstrap/scss/bootstrap";
+
+// Import Bootstrap Icons
+@import "bootstrap-icons/font/bootstrap-icons.css";
+
+// Custom styles
+body {
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+// Text gradient for header
+.text-gradient {
+  background: linear-gradient(135deg, $primary, #ff8c00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+// Header styling
+.display-4 {
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.lead {
+  font-size: 1.2rem;
+  font-weight: 300;
+}
+
+
+// Form controls
+.form-select,
+.form-control {
+  background-color: $input-bg;
+  border: 2px solid $input-border-color;
+  color: $input-color;
+
+  &:focus {
+    background-color: lighten($input-bg, 3%);
+    border-color: $primary;
+    box-shadow: 0 0 0 0.25rem rgba($primary, 0.25);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: lighten($input-border-color, 10%);
+    background-color: lighten($input-bg, 2%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: darken($input-bg, 3%);
+  }
+
+  option {
+    background-color: $input-bg;
+    color: $input-color;
+  }
+}
+
+
+
+// Outline buttons
+.btn-outline-secondary {
+  border: 2px solid $secondary;
+  color: $body-color;
+}
+
+
+// Danger outline button for clear all
+.btn-outline-danger {
+  border: 2px solid #dc3545;
+  color: #dc3545;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    transform: translateY(-1px);
+  }
+  
+  &.btn-sm {
+    border-width: 1px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+// Reset buttons (link style)
+.reset-btn {
+  color: #dc3545;
+  text-decoration: none;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: darken(#dc3545, 10%);
+    text-decoration: none;
+    transform: translateX(-2px);
+  }
+  
+  i {
+    font-size: 0.9rem;
+  }
+}
+
+// Switch improvements
+.form-switch {
+  padding-left: 3rem;
+  
+  .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    background-color: $input-border-color;
+    border: none;
+    cursor: pointer;
+
+    &:checked {
+      background-color: $primary;
+      border-color: $primary;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba($primary, 0.25);
+    }
+  }
+  
+  .form-check-label {
+    font-weight: 500;
+    cursor: pointer;
+  }
+}
+
+// Code output styling
+#configOutput,
+#commandOutput {
+  font-family: 'Cascadia Code', 'SF Mono', Monaco, 'Inconsolata', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  background-color: #0d1117 !important;
+  border: 1px solid #30363d;
+  max-height: 400px;
+  overflow-y: auto;
+  
+  code {
+    color: $success;
+  }
+}
+
+// Output header with copy button
+.output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  
+  h6 {
+    margin: 0;
+  }
+}
+
+// Output section animation
+#outputSection {
+  animation: fadeInUp 0.5s ease;
+  position: relative;
+  
+  &.auto-generated {
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(135deg, $success, lighten($success, 10%));
+      border-radius: 4px 0 0 4px;
+    }
+    
+    .card-title::after {
+      content: 'Auto-generated';
+      font-size: 0.75rem;
+      font-weight: normal;
+      color: $success;
+      margin-left: 1rem;
+      padding: 0.125rem 0.5rem;
+      background-color: rgba($success, 0.1);
+      border-radius: 0.25rem;
+    }
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba($success, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba($success, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba($success, 0);
+  }
+}
+
+// Add pulse effect when content updates
+.output-update {
+  animation: pulse 0.5s ease;
+}
+
+// Toast improvements
+.toast {
+  border: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  
+  &.bg-success {
+    background-color: $success !important;
+  }
+  
+  &.bg-danger {
+    background-color: #f44336 !important;
+  }
+  
+  &.bg-info {
+    background-color: $info !important;
+  }
+  
+  .toast-body {
+    font-weight: 500;
+  }
+  
+  .btn-close {
+    filter: invert(1);
+  }
+}
+
+// Smooth scrolling
+html {
+  scroll-behavior: smooth;
+}
+
+// Selection highlight
+::selection {
+  background-color: rgba($primary, 0.3);
+  color: white;
+}
+
+// Custom scrollbar
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: $dark;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $secondary;
+  border-radius: 5px;
+
+  &:hover {
+    background: lighten($secondary, 10%);
+  }
+}
+
+// Sidebar card styling
+.sticky-lg-top {
+  .card {
+    border-color: lighten($card-border-color, 5%);
+    
+    .card-title {
+      i {
+        font-size: 1.2rem;
+      }
+    }
+  }
+}
+
+// Selection summary styling
+#selectionsSummary {
+  ul {
+    li {
+      padding: 0.25rem 0;
+      border-bottom: 1px solid rgba($card-border-color, 0.5);
+      
+      &:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+      
+      i {
+        width: 20px;
+        text-align: center;
+      }
+      
+      strong {
+        font-weight: 600;
+        color: lighten($body-color, 10%);
+      }
+      
+      .text-success {
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+// Responsive improvements
+@media (max-width: 991px) {
+  .sticky-lg-top {
+    margin-top: 2rem;
+  }
+  
+  .display-4 {
+    font-size: 2.5rem;
+  }
+  
+  .lead {
+    font-size: 1.1rem;
+  }
+}
+
+// Gap utilities
+.gap-2 {
+  gap: 0.5rem !important;
+}
+
+// HR styling
+hr {
+  border-color: $card-border-color;
+  opacity: 0.5;
+}
+
+// Margin utilities for better spacing
+.mb-0 {
+  margin-bottom: 0 !important;
+}
+
+.mt-2 {
+  margin-top: 0.5rem !important;
+}
+
+// FIXED LAYOUT SYSTEM
+// Reduce overall padding to make panels wider
+.container-fluid {
+  max-width: none; // Remove restrictive max-width
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+// Improved grid system for desktop - Updated column order
+@media (min-width: 992px) {
+  .row.config-grid {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    display: grid !important;
+    // Updated grid template: sidebar (2fr), options (2fr), output (4fr)
+    grid-template-columns: 1.25fr 1.25fr 4fr;
+    gap: 0.5rem; // Increase gap for better spacing
+    row-gap: 0.5rem;
+  }
+
+  // Fix column widths in grid
+  .row.config-grid > [class*="col-"] {
+    flex: none !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+// Reduce card padding on smaller screens for better space usage
+@media (max-width: 767px) {
+  .card-body {
+    padding: 1rem !important;
+  }
+  
+  .container-fluid {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+// Ensure grid gutter is reasonable
+.config-grid {
+  --bs-gutter-x: 1.5rem;
+  --bs-gutter-y: 1.5rem;
+}
+
+// Make sure cards fill their containers properly - Updated for new order
+.sidebar-col .card,
+.options-col .card {
+  width: 100%;
+  min-width: 0; // Allow shrinking if needed
+}
+
+// Fix output column to use available space better
+.output-col {
+  min-width: 0; // Prevent overflow issues
+}
+
+// Ensure proper spacing in header
+header {
+  padding: 1rem 0 2rem 0;
+}
+
+// Better responsive behavior for the grid
+@media (max-width: 1199px) and (min-width: 992px) {
+  .row.config-grid {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 991px) {
+  .row.config-grid {
+    display: block !important;
+  }
+  
+  .config-grid [class*="col-"] {
+    margin-bottom: 1rem;
+  }
+}
+
+// --------------------------------------------------
+// 1) Custom gutters for our config‐grid row
+// --------------------------------------------------
+.row.config-grid {
+  // horizontal gap between columns
+  --bs-gutter-x: 0.5rem;  
+  // vertical gap between rows (if they wrap on mobile)
+  --bs-gutter-y: 1.5rem; 
+}
+
+// --------------------------------------------------
+// 2) Tighter, more consistent spacing on your switches
+// --------------------------------------------------
+.form-check.form-switch {
+  display: inline-flex;     // keep switch + label on one line
+  align-items: center;      
+  gap: 0.5rem;              // space between the toggle and its text
+  margin-top: 1rem;         // give a bit breathing room above each switch
+}
+
+// --------------------------------------------------
+// 3) Fixed height for the code outputs
+// --------------------------------------------------
+#configOutput {
+  min-height: 23rem;        // never collapse below ~12 lines
+  max-height: 23rem;        
+  overflow-y: auto;         // scroll if it grows taller
+  // preserve your existing styling:
+  // background, padding, border‐radius etc.
+}
+
+#commandOutput {
+  min-height: 3.55rem;        // never collapse below ~12 lines
+  max-height: 3.55rem;        
+  overflow-y: auto;         // scroll if it grows taller
+  // preserve your existing styling:
+  // background, padding, border‐radius etc.
+}
+
+// --------------------------------------------------
+// 4) Slim down that icon‑to‑text gap
+// --------------------------------------------------
+.card-title i,
+.form-label i {
+  margin-right: 0.25rem !important;
+}
+
+// --------------------------------------------------
+// OPTIONAL: If you want your selects to sit a little closer
+//            to their labels (instead of using mt-2 everywhere),
+//            you can override the default spacing here.
+// --------------------------------------------------
+.form-select {
+  margin-top: 0.5rem !important;
+}
