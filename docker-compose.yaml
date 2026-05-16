@@ -1,0 +1,26 @@
+name: torch-uv
+services:
+  frontend:
+    container_name: torch-uv-frontend
+    image: torch-uv-frontend
+    build:
+      context: frontend
+      dockerfile: ./Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - torch-info:/torch-info
+    depends_on:
+      - backend
+
+  backend:
+    container_name: torch-uv-backend
+    image: torch-uv-backend
+    build:
+      context: backend
+      dockerfile: ./Dockerfile
+    volumes:
+      - torch-info:/torch-info
+
+volumes:
+  torch-info:
