@@ -30,3 +30,6 @@ Thumbs.db
 # Deploy
 .env
 traefik/acme/
+
+# peer-collab scratch
+.peer-collab/
