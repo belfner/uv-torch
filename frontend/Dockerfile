@@ -11,7 +11,7 @@ COPY index.html /workspace/
 
 RUN npm run build
 
-FROM nginx
+FROM nginx:alpine
 ARG VITE_BASE=/torch-uv/
 COPY --from=build /workspace/dist/ /usr/share/nginx/
 RUN mv /usr/share/nginx/pytorch_info.json /var/cache/pytorch_info.seed.json \
