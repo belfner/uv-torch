@@ -6,7 +6,7 @@ import { clearAllSelections } from './services/selectionService.js';
 const CONTROL_IDS = [
   'platform', 'pythonVersion', 'pytorchVersion', 'computeType', 'computeVersion',
   'includeTorchvision', 'includeTorchaudio', 'includeCPU',
-  'clearAllBtn', 'copyConfigBtn', 'copyCommandBtn', 'copyAllBtn', 'downloadBtn',
+  'clearAllBtn', 'copyConfigBtn', 'copyCommandBtn', 'copyAllBtn',
 ];
 
 const REQUIRED_RELEASE_FIELDS = [
@@ -26,15 +26,61 @@ function disableAllControls() {
   });
 }
 
-/** Render a fatal error banner, disable controls, and stop app initialization */
+/** Controls re-enabled once the catalog has loaded and the UI is wired.
+ *  Compute Version, Include CPU, and the copy buttons stay disabled
+ *  here; they are governed by their own state logic. */
+const LOADED_ENABLED_IDS = [
+  'platform', 'pythonVersion', 'pytorchVersion', 'computeType',
+  'includeTorchvision', 'includeTorchaudio',
+];
+
+/** C2: remove the in-flight loading indicator */
+function hideLoadingBanner() {
+  const banner = document.getElementById('loadingBanner');
+  if (banner !== null) {
+    banner.remove();
+  }
+}
+
+/** C2: re-enable the input controls once the UI is ready. Leaves
+ *  state-governed controls (Compute Version, Include CPU, copy,
+ *  Clear All) to their own logic. */
+function enableLoadedControls() {
+  LOADED_ENABLED_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el !== null) {
+      el.disabled = false;
+    }
+  });
+  document.querySelectorAll('.reset-btn').forEach(btn => {
+    btn.disabled = false;
+  });
+}
+
+/** Render a fatal error banner with a retry action, disable controls,
+ *  and stop app initialization */
 function showFatalError(message) {
   disableAllControls();
+  hideLoadingBanner();
 
   const container = document.querySelector('.container-fluid');
   const alert = document.createElement('div');
   alert.className = 'alert alert-danger m-3';
   alert.setAttribute('role', 'alert');
-  alert.textContent = message;
+
+  const text = document.createElement('span');
+  text.textContent = message + ' ';
+  alert.appendChild(text);
+
+  // C2: a retry action so a transient catalog outage is recoverable
+  // without the user knowing to reload manually.
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'btn btn-sm btn-outline-light ms-2';
+  retry.textContent = 'Retry';
+  retry.addEventListener('click', () => window.location.reload());
+  alert.appendChild(retry);
+
   if (container !== null) {
     container.prepend(alert);
   } else {
@@ -62,6 +108,11 @@ function isValidCatalog(data) {
 }
 
 export default async function initApp() {
+  // C2: keep every control disabled while the catalog is in flight; the
+  // #loadingBanner communicates the wait. Success re-enables the inputs;
+  // failure swaps the banner for a fatal error with a retry action.
+  disableAllControls();
+
   // 1) Load PyTorch metadata
   let data;
   try {
@@ -93,4 +144,8 @@ export default async function initApp() {
 
   // 5) Wire up all buttons, selects, and checkboxes
   setupEventListeners(data.all_releases);
+
+  // 6) Catalog is ready: drop the loading indicator and re-enable inputs
+  hideLoadingBanner();
+  enableLoadedControls();
 }

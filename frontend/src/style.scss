@@ -19,6 +19,16 @@ $input-focus-border-color: $primary;
 // Import Bootstrap Icons
 @import "bootstrap-icons/font/bootstrap-icons.css";
 
+// A1: accessible muted text on the dark surfaces.
+// #949494 measures >=4.5:1 on $dark (#0f0f0f), $card-bg (#1a1a1a) and
+// $input-bg (#252525); ratios re-verified during implementation.
+$accessible-muted: #949494;
+
+:root {
+  --bs-secondary-color: #{$accessible-muted};
+  --bs-tertiary-color: #{$accessible-muted};
+}
+
 // Custom styles
 body {
   min-height: 100vh;
@@ -34,14 +44,19 @@ body {
   font-weight: 700;
 }
 
-// Header styling
-.display-4 {
-  font-weight: 700;
-  letter-spacing: -1px;
+// B6: compact, left-aligned heading so the controls stay above the fold
+.app-header {
+  padding: 0.5rem 0 1.25rem 0;
 }
 
-.lead {
-  font-size: 1.2rem;
+.app-title {
+  font-size: 2.625rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.app-subtitle {
+  font-size: 1.5rem;
   font-weight: 300;
 }
 
@@ -107,22 +122,51 @@ body {
 }
 
 // Reset buttons (link style)
+// A3: per-field reset is reversible, so it reads as a neutral/tertiary
+// affordance. Red stays reserved for Clear All and genuine errors.
 .reset-btn {
-  color: #dc3545;
+  color: $accessible-muted;
   text-decoration: none;
   font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
   transition: all 0.2s ease;
-  
+
   &:hover {
-    color: darken(#dc3545, 10%);
+    color: lighten($accessible-muted, 15%);
     text-decoration: none;
     transform: translateX(-2px);
   }
-  
+
   i {
     font-size: 0.9rem;
   }
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+// C6: DOM order per field is label -> select -> Reset (so keyboard tab
+// order is label, select, Reset). The button is positioned back up by
+// the label visually, without changing the accessible source order.
+.field-group {
+  position: relative;
+}
+
+.field-group .reset-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+// The Compute Version meta line and the Include CPU helper line each
+// swap between a short and a longer message; in the narrow rail the
+// longer one wraps to a second line. Reserve two lines for both so the
+// panel height stays constant no matter which message is shown.
+#computeVersionGroup .dropdown-meta,
+#includeCPUHelp {
+  display: block;
+  min-height: 3em;
 }
 
 // Switch improvements
@@ -158,11 +202,9 @@ body {
   font-family: 'Cascadia Code', 'SF Mono', Monaco, 'Inconsolata', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
   font-size: 0.9rem;
   line-height: 1.6;
-  background-color: #0d1117 !important;
+  background-color: #0d1117;
   border: 1px solid #30363d;
-  max-height: 400px;
-  overflow-y: auto;
-  
+
   code {
     color: $success;
   }
@@ -184,30 +226,11 @@ body {
 #outputSection {
   animation: fadeInUp 0.5s ease;
   position: relative;
-  
-  &.auto-generated {
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: linear-gradient(135deg, $success, lighten($success, 10%));
-      border-radius: 4px 0 0 4px;
-    }
-    
-    .card-title::after {
-      content: 'Auto-generated';
-      font-size: 0.75rem;
-      font-weight: normal;
-      color: $success;
-      margin-left: 1rem;
-      padding: 0.125rem 0.5rem;
-      background-color: rgba($success, 0.1);
-      border-radius: 0.25rem;
-    }
-  }
+}
+
+// C5: real status line near the output, neutral by default
+.output-status {
+  margin-bottom: 1rem;
 }
 
 @keyframes fadeInUp {
@@ -233,9 +256,24 @@ body {
   }
 }
 
-// Add pulse effect when content updates
+// C5: pulse only on a real content change; all motion respects the
+// user's reduced-motion preference.
 .output-update {
   animation: pulse 0.5s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #outputSection {
+    animation: none;
+  }
+
+  .output-update {
+    animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 // Toast improvements
@@ -243,16 +281,20 @@ body {
   border: none;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   
+  // A2: darkened filled backgrounds so the always-white toast text
+  // clears WCAG AA (white on these measures >=4.5:1; the bright
+  // $success/$info/#f44336 fills were ~2-3:1). Bootstrap's .bg-*
+  // utilities are !important, so the override must stay !important.
   &.bg-success {
-    background-color: $success !important;
+    background-color: #1b5e20 !important;
   }
-  
+
   &.bg-danger {
-    background-color: #f44336 !important;
+    background-color: #b71c1c !important;
   }
-  
+
   &.bg-info {
-    background-color: $info !important;
+    background-color: #0d47a1 !important;
   }
   
   .toast-body {
@@ -308,31 +350,35 @@ html {
 }
 
 // Selection summary styling
+// B5: dense chip layout near the output instead of a tall bordered list.
+// A3: values use neutral emphasis, not green.
 #selectionsSummary {
-  ul {
-    li {
-      padding: 0.25rem 0;
-      border-bottom: 1px solid rgba($card-border-color, 0.5);
-      
-      &:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-      }
-      
-      i {
-        width: 20px;
-        text-align: center;
-      }
-      
-      strong {
-        font-weight: 600;
-        color: lighten($body-color, 10%);
-      }
-      
-      .text-success {
-        font-weight: 500;
-      }
+  .selection-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.85rem;
+    background-color: $input-bg;
+    border: 1px solid $card-border-color;
+    border-radius: 1rem;
+
+    i {
+      color: $primary;
     }
+  }
+
+  .selection-chip-label {
+    color: $accessible-muted;
+
+    &::after {
+      content: ':';
+    }
+  }
+
+  .selection-value {
+    font-weight: 600;
+    color: lighten($body-color, 10%);
   }
 }
 
@@ -342,12 +388,12 @@ html {
     margin-top: 2rem;
   }
   
-  .display-4 {
-    font-size: 2.5rem;
+  .app-title {
+    font-size: 2.1rem;
   }
-  
-  .lead {
-    font-size: 1.1rem;
+
+  .app-subtitle {
+    font-size: 1.425rem;
   }
 }
 
@@ -371,123 +417,106 @@ hr {
   margin-top: 0.5rem !important;
 }
 
-// FIXED LAYOUT SYSTEM
-// Reduce overall padding to make panels wider
+// --------------------------------------------------
+// Layout: single source of truth for the config grid.
+// Original 3-column layout: sidebar (Environment + Current
+// Selection) | options (PyTorch & Compute + Additional
+// Packages) | prominent output. The page scrolls naturally;
+// the generated code scrolls horizontally.
+// --------------------------------------------------
 .container-fluid {
-  max-width: none; // Remove restrictive max-width
-  padding-left: 1rem !important;
-  padding-right: 1rem !important;
+  max-width: none;
 }
 
-// Improved grid system for desktop - Updated column order
-@media (min-width: 992px) {
-  .row.config-grid {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    display: grid !important;
-    // Updated grid template: sidebar (2fr), options (2fr), output (4fr)
-    grid-template-columns: 1.25fr 1.25fr 4fr;
-    gap: 0.5rem; // Increase gap for better spacing
-    row-gap: 0.5rem;
-  }
-
-  // Fix column widths in grid
-  .row.config-grid > [class*="col-"] {
-    flex: none !important;
-    width: 100% !important;
-    max-width: none !important;
-  }
-}
-
-// Reduce card padding on smaller screens for better space usage
-@media (max-width: 767px) {
-  .card-body {
-    padding: 1rem !important;
-  }
-  
-  .container-fluid {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-}
-
-// Ensure grid gutter is reasonable
-.config-grid {
+.row.config-grid {
   --bs-gutter-x: 1.5rem;
   --bs-gutter-y: 1.5rem;
 }
 
-// Make sure cards fill their containers properly - Updated for new order
-.sidebar-col .card,
-.options-col .card {
-  width: 100%;
-  min-width: 0; // Allow shrinking if needed
-}
-
-// Fix output column to use available space better
-.output-col {
-  min-width: 0; // Prevent overflow issues
-}
-
-// Ensure proper spacing in header
-header {
-  padding: 1rem 0 2rem 0;
-}
-
-// Better responsive behavior for the grid
-@media (max-width: 1199px) and (min-width: 992px) {
+// Desktop: two compact control columns + a dominant output column
+@media (min-width: 992px) {
   .row.config-grid {
-    gap: 1rem;
+    display: grid !important;
+    grid-template-columns: 1.25fr 1.25fr 4fr;
+    column-gap: 0.5rem;
+    row-gap: 0.5rem;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .row.config-grid > [class*="col-"] {
+    flex: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0;
   }
 }
 
+// Tablet/small-desktop: a touch more breathing room between columns
+@media (max-width: 1199px) and (min-width: 992px) {
+  .row.config-grid {
+    column-gap: 1rem;
+  }
+}
+
+// Below desktop the grid falls back to the natural stacked flow
 @media (max-width: 991px) {
   .row.config-grid {
     display: block !important;
   }
-  
+
   .config-grid [class*="col-"] {
     margin-bottom: 1rem;
   }
+
+  .row.config-grid .sticky-lg-top {
+    position: static;
+  }
 }
 
-// --------------------------------------------------
-// 1) Custom gutters for our config‐grid row
-// --------------------------------------------------
-.row.config-grid {
-  // horizontal gap between columns
-  --bs-gutter-x: 0.5rem;  
-  // vertical gap between rows (if they wrap on mobile)
-  --bs-gutter-y: 1.5rem; 
+@media (max-width: 767px) {
+  .card-body {
+    padding: 1rem;
+  }
 }
 
-// --------------------------------------------------
-// 2) Tighter, more consistent spacing on your switches
-// --------------------------------------------------
-.form-check.form-switch {
-  display: inline-flex;     // keep switch + label on one line
-  align-items: center;      
-  gap: 0.5rem;              // space between the toggle and its text
-  margin-top: 1rem;         // give a bit breathing room above each switch
+.sidebar-col .card,
+.options-col .card {
+  width: 100%;
+  min-width: 0;
 }
 
-// --------------------------------------------------
-// 3) Fixed height for the code outputs
-// --------------------------------------------------
+.output-col {
+  min-width: 0;
+}
+
+.output-col .card {
+  width: 100%;
+  min-width: 0;
+}
+
+// Output sizing: one rule each, no conflicting min/max declarations.
+// B3: scroll long lines horizontally rather than wrap the generated TOML.
 #configOutput {
-  min-height: 23rem;        // never collapse below ~12 lines
-  max-height: 23rem;        
-  overflow-y: auto;         // scroll if it grows taller
-  // preserve your existing styling:
-  // background, padding, border‐radius etc.
+  min-height: 23rem;
+  max-height: 23rem;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 
 #commandOutput {
-  min-height: 3.55rem;        // never collapse below ~12 lines
-  max-height: 3.55rem;        
-  overflow-y: auto;         // scroll if it grows taller
-  // preserve your existing styling:
-  // background, padding, border‐radius etc.
+  min-height: 3.55rem;
+  max-height: 3.55rem;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+// Switch + label kept together; each switch is its own row (B4 stacking)
+.form-check.form-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 // --------------------------------------------------
@@ -505,4 +534,49 @@ header {
 // --------------------------------------------------
 .form-select {
   margin-top: 0.5rem !important;
+}
+
+// --------------------------------------------------
+// C6: skip link - off-screen until focused, then a clear
+// orange-accented target at the top of the page
+// --------------------------------------------------
+.skip-link {
+  position: absolute;
+  z-index: 1080;
+
+  &:focus {
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: $primary;
+    color: #fff;
+    border-radius: 0.25rem;
+    text-decoration: none;
+  }
+}
+
+// --------------------------------------------------
+// D5: consistent focus-visible ring and minimum hit areas
+// so every interactive control is comfortably clickable
+// --------------------------------------------------
+.btn:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible,
+.skip-link:focus-visible {
+  outline: 2px solid $primary;
+  outline-offset: 2px;
+}
+
+.btn {
+  min-height: 2.25rem;
+}
+
+.btn-sm {
+  min-height: 2rem;
+}
+
+// D2: one consistent output-action toolbar; Copy Both is the single
+// filled primary action (existing $primary orange), the rest secondary
+.output-actions {
+  flex-wrap: wrap;
 }

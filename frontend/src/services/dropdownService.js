@@ -16,7 +16,9 @@ export function setupDropdowns(allReleases) {
   DROPDOWN_IDS.forEach(id => {
     const selectEl = document.getElementById(id);
     const key = mapKey(id);
-    populate(selectEl, unique[key] || []);
+    const opts = unique[key] || [];
+    populate(selectEl, opts);
+    updateMeta(selectEl, opts.length, false);
   });
 
   // Initially disable compute version
@@ -45,21 +47,87 @@ export function refreshDropdowns() {
 
     // Then populate
     const opts = getUniqueValues(pkgs)[key] || [];
-    populate(selectEl, opts, /* preserveValue= */ true);
+    const dropped = populate(selectEl, opts, /* preserveValue= */ true);
+    updateMeta(selectEl, opts.length, dropped);
   });
 }
 
-/** Helper: fill a <select> with options */
+/**
+ * Helper: fill a <select> with options.
+ *
+ * C3: keeps the field-specific placeholder (from data-placeholder) instead
+ * of the generic "Select...". Returns true when a previously selected,
+ * non-empty value was dropped because it is no longer compatible.
+ */
 function populate(selectEl, options, preserveValue = false) {
   const current = selectEl.value;
-  selectEl.innerHTML = `<option value="">Select...</option>`;
+  const placeholder = selectEl.dataset.placeholder || 'Select...';
+  selectEl.innerHTML = '';
+  selectEl.add(new Option(placeholder, ''));
   options.forEach(opt => {
-    const option = new Option(opt, opt);
-    selectEl.add(option);
+    selectEl.add(new Option(opt, opt));
   });
-  if (preserveValue && options.includes(current)) {
-    selectEl.value = current;
+
+  let dropped = false;
+  if (preserveValue) {
+    if (options.includes(current)) {
+      selectEl.value = current;
+    } else if (current !== '') {
+      dropped = true;
+    }
   }
+  return dropped;
+}
+
+/** C3: ensure a single inline meta line exists right after the select */
+function ensureMeta(selectEl) {
+  const next = selectEl.nextElementSibling;
+  if (next !== null && next.classList.contains('dropdown-meta')) {
+    return next;
+  }
+  const meta = document.createElement('small');
+  meta.className = 'dropdown-meta form-text d-block';
+  selectEl.insertAdjacentElement('afterend', meta);
+  return meta;
+}
+
+/**
+ * C3: show a compatibility-count hint, or a restrained inline notice when
+ * the prior choice was auto-cleared. Deliberately not a toast - filtering
+ * happens on every change and would otherwise produce a toast storm.
+ */
+function updateMeta(selectEl, count, dropped) {
+  const meta = ensureMeta(selectEl);
+
+  // The Compute Version count is only meaningful once a GPU compute type
+  // (CUDA / ROCm) is chosen. For an empty/CPU/XPU type the field is
+  // disabled, so this single line carries the reason instead of a count.
+  if (selectEl.id === 'computeVersion') {
+    const computeType = document.getElementById('computeType').value;
+    const contextText = {
+      '': 'Choose CUDA or ROCm first',
+      CPU: 'Not needed for CPU',
+      XPU: 'Not configurable for XPU'
+    }[computeType];
+    if (contextText !== undefined) {
+      meta.textContent = contextText;
+      meta.classList.remove('text-warning');
+      meta.classList.add('text-muted');
+      return;
+    }
+  }
+
+  if (dropped) {
+    meta.textContent = 'Previous choice is no longer compatible - selection cleared.';
+    meta.classList.remove('text-muted');
+    meta.classList.add('text-warning');
+    return;
+  }
+  meta.textContent = count === 0
+    ? 'No options compatible with the current selection'
+    : `${count} compatible option${count === 1 ? '' : 's'}`;
+  meta.classList.remove('text-warning');
+  meta.classList.add('text-muted');
 }
 
 /** Map DOM id to data key in package objects */

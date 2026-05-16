@@ -80,9 +80,62 @@ export function zip(arrays) {
 }
 /** Display TOML & command in the output card */
 
+/**
+ * C5: drive the single output status line. Kept here so both the
+ * generation flow (showOutput) and the no-match branches in
+ * generatorService can report state through one polite live region.
+ */
+export function setOutputStatus(text) {
+    const statusEl = document.getElementById('outputStatus');
+    if (statusEl !== null) {
+        statusEl.textContent = text;
+    }
+}
+
 export function showOutput(toml, cmd) {
-    document.getElementById('configOutput').textContent = toml;
+    const configEl = document.getElementById('configOutput');
+    const prevToml = configEl.textContent;
+
+    configEl.textContent = toml;
     document.getElementById('commandOutput').textContent = cmd;
+
+    // C1: keep the output card visible at all times; swap between a stable
+    // empty-state hint and the generated content instead of blanking it.
+    const hasOutput = toml.length > 0;
+    const emptyState = document.getElementById('outputEmptyState');
+    const content = document.getElementById('outputContent');
+    if (emptyState !== null) {
+        emptyState.hidden = hasOutput;
+    }
+    if (content !== null) {
+        content.hidden = !hasOutput;
+    }
+
+    // D1: copy is only actionable once real output exists.
+    // showOutput is reached only via the generation flow, which runs only
+    // after a successful init; the fatal path returns before event wiring,
+    // so this never re-enables controls disableAllControls() locked down.
+    ['copyConfigBtn', 'copyCommandBtn', 'copyAllBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn !== null) {
+            btn.disabled = !hasOutput;
+        }
+    });
+
+    // C5: status line + a single pulse only on a real content change.
+    // The reduced-motion media query neutralizes the animation in CSS,
+    // so adding the class unconditionally here is safe.
+    setOutputStatus(hasOutput ? 'Generated from current selections' : 'Waiting for selections');
+
+    if (hasOutput && toml !== prevToml) {
+        const section = document.getElementById('outputSection');
+        if (section !== null) {
+            section.classList.remove('output-update');
+            // force reflow so the animation can retrigger on each change
+            void section.offsetWidth;
+            section.classList.add('output-update');
+        }
+    }
 }
 
 

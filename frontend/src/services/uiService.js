@@ -1,4 +1,4 @@
-// Handles DOM events, toasts, copy/download, and wiring selection changes
+// Handles DOM events, toasts, copy, and wiring selection changes
 import * as bootstrap from 'bootstrap';
 import { updateSelectionsFromDOM, selections } from './selectionService.js';
 import { refreshDropdowns } from './dropdownService.js';
@@ -25,8 +25,13 @@ export function setupEventListeners(allReleases) {
             const mod = await import('./selectionService.js');
             mod.clearAllSelections();
             refreshDropdowns();
+            // Clear All empties computeType, so re-normalize the dependent
+            // controls (Compute Version / Include CPU) on this path too.
+            normalizeComputeControls();
             maybeAutoGenerate();
             updateSelectionsSummary();
+            updateComputeControlsHelp();
+            updateResetAndClearState();
             showNotification('All selections cleared', 'info');
         });
 
@@ -39,40 +44,82 @@ export function setupEventListeners(allReleases) {
 
     // Copy buttons
     document.getElementById('copyConfigBtn')
-        .addEventListener('click', () => copyText('configOutput'));
+        .addEventListener('click', (e) => copyText('configOutput', e.currentTarget));
     document.getElementById('copyCommandBtn')
-        .addEventListener('click', () => copyText('commandOutput'));
+        .addEventListener('click', (e) => copyText('commandOutput', e.currentTarget));
     document.getElementById('copyAllBtn')
-        .addEventListener('click', () => copyAll());
+        .addEventListener('click', (e) => copyAll(e.currentTarget));
 
-    // Download button
-    document.getElementById('downloadBtn')
-        .addEventListener('click', () => downloadAll());
+    // C4: seed the compute helper text for the initial (empty) state
+    updateComputeControlsHelp();
+    // D4: seed per-field Reset visibility and the Clear All enabled state
+    updateResetAndClearState();
 }
 
-function onComputeTypeChange() {
-    const computeTypeElement = document.getElementById('computeType')
+/**
+ * Single source of truth for the enabled/cleared state of the
+ * compute-dependent controls. Compute Version applies only to a specific
+ * GPU compute type; Include CPU applies only alongside a non-CPU build.
+ * Every path that can change the compute type (direct change, per-field
+ * Reset, Clear All) calls this so the controls and their helper text can
+ * never disagree.
+ */
+function normalizeComputeControls() {
+    const computeType = document.getElementById('computeType').value
     const computeVersionElement = document.getElementById('computeVersion')
     const includeCPUElement = document.getElementById('includeCPU')
-    const computeType = computeTypeElement.value
 
-    if (!computeType || computeType === 'CPU' || computeType === 'XPU') {
+    if (computeType === '' || computeType === 'CPU' || computeType === 'XPU') {
         computeVersionElement.disabled = true
         computeVersionElement.value = ''
         delete selections.computeVersion
     } else {
         computeVersionElement.disabled = false
-        computeVersionElement.value = ''
     }
-    if (!computeType || computeType === 'CPU') {
+
+    if (computeType === '' || computeType === 'CPU') {
         includeCPUElement.checked = false
         includeCPUElement.disabled = true
-
     } else {
         includeCPUElement.disabled = false
     }
+}
+
+function onComputeTypeChange() {
+    normalizeComputeControls()
+    // A genuine compute-type change invalidates any prior compute-version
+    // pick; clear it so the user reselects against the new type.
+    const computeVersionElement = document.getElementById('computeVersion')
+    if (!computeVersionElement.disabled) {
+        computeVersionElement.value = ''
+    }
 
     onSelectionChange();
+}
+
+/**
+ * C4: keep the Include CPU helper text in sync with why the control is
+ * enabled or disabled. The Compute Version line is the dropdown count
+ * meta itself (see dropdownService.updateMeta).
+ */
+function updateComputeControlsHelp() {
+    const computeType = document.getElementById('computeType').value;
+    const cpuHelp = document.getElementById('includeCPUHelp');
+
+    let cpuText;
+    if (computeType === '') {
+        cpuText = 'Select a GPU compute type to add a CPU fallback';
+    } else if (computeType === 'CPU') {
+        cpuText = 'Configuration is already CPU-only';
+    } else if (computeType === 'XPU') {
+        cpuText = 'Adds a CPU-only fallback build alongside XPU';
+    } else {
+        cpuText = 'Also include a CPU-only fallback build';
+    }
+
+    if (cpuHelp !== null) {
+        cpuHelp.textContent = cpuText;
+    }
 }
 
 function resetField(buttonEl) {
@@ -85,10 +132,10 @@ function resetField(buttonEl) {
     }
 
     if (fieldName === 'computeType') {
-        const cv = document.getElementById('computeVersion');
-        cv.value = '';
-        cv.disabled = true;
-        delete selections.computeVersion;
+        // Chunk-3 fix: resetting Compute Type must also disable/clear
+        // Compute Version and Include CPU, exactly like a direct change,
+        // so the controls match the (now empty) helper text.
+        normalizeComputeControls();
     }
 
     onSelectionChange();
@@ -101,7 +148,45 @@ function onSelectionChange() {
     // so selections does not carry stale state into the summary or generation
     updateSelectionsFromDOM();
     updateSelectionsSummary();
+    // C4: keep compute helper text in sync on every path that reaches here
+    // (direct change, per-field Reset), not just direct computeType change
+    updateComputeControlsHelp();
+    // D4: per-field Reset visibility and Clear All enabled state track
+    // the current selection on every change path
+    updateResetAndClearState();
     maybeAutoGenerate();
+}
+
+/**
+ * D4: a per-field Reset is only meaningful once that field has a value,
+ * and Clear All is only meaningful once the form is non-default. Hide the
+ * Reset buttons for empty fields and disable Clear All on a pristine form
+ * so neither affordance invites a no-op.
+ */
+function updateResetAndClearState() {
+    let anyNonDefault = false;
+
+    document.querySelectorAll('.reset-btn').forEach(btn => {
+        const field = btn.dataset.field;
+        const control = document.getElementById(field);
+        const hasValue = control !== null && control.value !== '';
+        btn.hidden = !hasValue;
+        if (hasValue) {
+            anyNonDefault = true;
+        }
+    });
+
+    ['includeTorchvision', 'includeTorchaudio', 'includeCPU'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el !== null && el.checked) {
+            anyNonDefault = true;
+        }
+    });
+
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn !== null) {
+        clearAllBtn.disabled = !anyNonDefault;
+    }
 }
 
 /** Show a Bootstrap toast */
@@ -112,8 +197,26 @@ export function showNotification(msg, type = 'info') {
 }
 
 
+/**
+ * D3: briefly swap a copy button to a "Copied" check state, then restore
+ * its original markup. The toast / polite region still fires for assistive
+ * tech; this is the in-place visual confirmation.
+ */
+function flashCopied(btn) {
+    if (btn === null || btn === undefined || btn.dataset.flashing === 'true') {
+        return;
+    }
+    const original = btn.innerHTML;
+    btn.dataset.flashing = 'true';
+    btn.innerHTML = '<i class="bi bi-check-lg me-1" aria-hidden="true"></i>Copied';
+    setTimeout(() => {
+        btn.innerHTML = original;
+        delete btn.dataset.flashing;
+    }, 1500);
+}
+
 /** Copy text content of an element to clipboard */
-async function copyText(elId) {
+async function copyText(elId, btn = null) {
     const el = document.getElementById(elId);
     if (!el) {
         console.error(`Element with id "${elId}" not found.`);
@@ -129,6 +232,7 @@ async function copyText(elId) {
     if (navigator.clipboard !== undefined) {
         try {
             await navigator.clipboard.writeText(text);
+            flashCopied(btn);
             showNotification('Copied to clipboard', 'success');
             return
         } catch (err) {
@@ -149,7 +253,7 @@ async function copyText(elId) {
 }
 
 /** Copy both TOML & command */
-async function copyAll() {
+async function copyAll(btn = null) {
     const tomlEl = document.getElementById('configOutput');
     const cmdEl = document.getElementById('commandOutput');
     const toml = tomlEl.textContent;
@@ -164,6 +268,7 @@ async function copyAll() {
     if (navigator.clipboard !== undefined) {
         try {
             await navigator.clipboard.writeText(combined);
+            flashCopied(btn);
             showNotification('All copied', 'success');
             return
         } catch (err) {
@@ -190,6 +295,7 @@ async function copyAll() {
     document.body.removeChild(scratch);
 
     if (copied) {
+        flashCopied(btn);
         showNotification('All copied', 'success');
         return
     }
@@ -205,34 +311,20 @@ async function copyAll() {
     showNotification('Press Ctrl+C (or ⌘+C) to copy the selected config.', 'info');
 }
 
-/** Trigger download of a .txt file containing both outputs */
-function downloadAll() {
-    const toml = document.getElementById('configOutput').textContent;
-    const cmd = document.getElementById('commandOutput').textContent;
-    if (toml.length === 0) {
-        showNotification('No text to download', 'info');
-        return
-    }
-
-    const content = toml + '\n\n' + cmd;
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pytorch_uv_config.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
 function updateSelectionsSummary() {
     const summary = document.getElementById('selectionsSummary')
     const includeCPU = document.getElementById('includeCPU').checked
-    if (Object.keys(selections).length === 0) {
-        summary.innerHTML = '<p class="text-muted fst-italic">No selections made yet</p>'
+
+    const extras = []
+    if (document.getElementById('includeTorchvision').checked) extras.push('torchvision')
+    if (document.getElementById('includeTorchaudio').checked) extras.push('torchaudio')
+
+    // The package toggles are real selections even with no dropdown picks,
+    // so the empty state must account for them too.
+    if (Object.keys(selections).length === 0 && extras.length === 0) {
+        summary.innerHTML = '<p class="text-muted fst-italic mb-0">No selections made yet</p>'
         return
     }
-
-    let html = '<ul class="list-unstyled mb-0">'
 
     const items = [
         { key: 'platform', label: 'Platform', icon: 'bi-pc-display' },
@@ -242,31 +334,29 @@ function updateSelectionsSummary() {
         { key: 'computeVersion', label: 'Version', icon: 'bi-badge-vr' }
     ]
 
+    // B5: compact chips instead of a tall list; A3: neutral value text,
+    // green is reserved for genuine success states.
+    let chips = ''
     items.forEach(({ key, label, icon }) => {
         if (!Object.hasOwn(selections, key)) return
         let data = selections[key]
         if (key == 'computeType' && data !== 'CPU' && includeCPU) { data += ' + CPU' }
-        html += `
-        <li class="mb-2">
-          <i class="${icon} text-primary me-2"></i>
-          <strong>${label}:</strong>
-          <span class="text-success">${data}</span>
-        </li>`
+        chips += `
+        <span class="selection-chip">
+          <i class="${icon} me-1"></i>
+          <span class="selection-chip-label">${label}</span>
+          <span class="selection-value">${data}</span>
+        </span>`
     })
 
-    const extras = []
-    if (document.getElementById('includeTorchvision').checked) extras.push('torchvision')
-    if (document.getElementById('includeTorchaudio').checked) extras.push('torchaudio')
-
-    if (extras.length) {
-        html += `
-      <li class="mb-2">
-        <i class="bi-box-seam text-primary me-2"></i>
-        <strong>Packages:</strong>
-        <span class="text-success">${extras.join(', ')}</span>
-      </li>`
+    if (extras.length > 0) {
+        chips += `
+        <span class="selection-chip">
+          <i class="bi-box-seam me-1"></i>
+          <span class="selection-chip-label">Additional Packages</span>
+          <span class="selection-value">${extras.join(', ')}</span>
+        </span>`
     }
 
-    html += '</ul>'
-    summary.innerHTML = html
+    summary.innerHTML = `<div class="d-flex flex-wrap gap-2">${chips}</div>`
 }

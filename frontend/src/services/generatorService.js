@@ -2,7 +2,7 @@
 import { getFilteredPackages, getUniqueValues, zip, getComputePairs } from '../utils/index.js';
 import { selections } from './selectionService.js';
 import { showNotification } from './uiService.js';
-import { showOutput } from '../utils/index.js';
+import { showOutput, setOutputStatus } from '../utils/index.js';
 
 function createIndexName(computeType, computeVersion) {
   let computeVersionString = ''
@@ -138,6 +138,7 @@ function createUvCommand(includeTorchvision, includeTorchaudio, pytorchVersion =
 
 function generateBasicConfiguration(pkgs) {
   if (pkgs.length === 0) {
+    setOutputStatus('No compatible package found')
     showNotification('No matching packages found!', 'danger')
     return
   }
@@ -194,6 +195,7 @@ function getIndexUrls(pkgs, computePairs) {
 function generatePytorchComputeTypeConfiguration(pkgs) {
   // TODO add ability to optionally include CPU version as well
   if (pkgs.length === 0) {
+    setOutputStatus('No compatible package found')
     showNotification('No matching packages found!', 'danger')
     return
   }
@@ -309,6 +311,7 @@ function getAllLatestComputeVersions(pkgs, uniqueValues) {
 
 function generatePytorchOnlyConfiguration(pkgs) {
   if (pkgs.length === 0) {
+    setOutputStatus('No compatible package found')
     showNotification('No matching packages found!', 'danger')
     return
   }
@@ -413,8 +416,8 @@ export function maybeAutoGenerate() {
     return
   }
 
-  // No config generated, clear generated text
-  // TODO create actuall empty state
+  // No complete selection yet: showOutput renders the stable empty state
+  // (card stays visible, copy disabled) instead of blanking.
   showOutput('', '');
 
 }
