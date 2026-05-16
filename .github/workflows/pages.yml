@@ -1,0 +1,86 @@
+name: Deploy GitHub Pages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'scripts/derive-pages-endpoint.sh'
+      - '.github/workflows/pages.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+env:
+  ENDPOINT: ${{ vars.PAGES_ENDPOINT }}
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Verify the current major at github.com/astral-sh/setup-uv/releases
+      # before merging this workflow.
+      - uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Derive Pages endpoint
+        run: |
+          ENDPOINT="${ENDPOINT:-${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY##*/}}"
+          eval "$(ENDPOINT="$ENDPOINT" sh scripts/derive-pages-endpoint.sh)"
+          {
+            echo "ENDPOINT=$ENDPOINT"
+            echo "VITE_BASE=$VITE_BASE"
+            echo "PAGES_CNAME=$PAGES_CNAME"
+          } >> "$GITHUB_ENV"
+
+      - name: Refresh PyTorch catalog
+        working-directory: backend
+        run: |
+          uv sync --no-dev --locked
+          PYTORCH_INFO_PATH="$GITHUB_WORKSPACE/frontend/public/pytorch_info.json" \
+            uv run python update_cache.py --once
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Add custom domain file
+        run: |
+          if [ -n "$PAGES_CNAME" ]; then
+            printf '%s\n' "$PAGES_CNAME" > frontend/dist/CNAME
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import logging
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -9,7 +11,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler  # type: ignore[im
 
 from torch_wheel_index import refresh_if_stale
 
-TARGET_FILE = Path("/torch-info/pytorch_info.json")
+TARGET_FILE = Path(os.environ.get("PYTORCH_INFO_PATH", "/torch-info/pytorch_info.json"))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,7 +58,7 @@ def update_indexes() -> None:
             backup.unlink()
 
 
-def main() -> None:
+def run_scheduler() -> None:
     """
     Run an immediate refresh, then schedule hourly refreshes.
     """
@@ -65,6 +67,19 @@ def main() -> None:
     scheduler.add_job(update_indexes, "interval", hours=1)
     logger.info("Scheduler started. Running updates every hour.")
     scheduler.start()
+
+
+def main() -> None:
+    """
+    Run one refresh and exit when ``--once`` is given, otherwise run the
+    immediate refresh followed by the hourly scheduler.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--once", action="store_true")
+    if parser.parse_args().once:
+        update_indexes()
+    else:
+        run_scheduler()
 
 
 if __name__ == "__main__":
