@@ -1,0 +1,6 @@
+*
+!.python-version
+!package.py
+!pyproject.toml
+!update_cache.py
+!uv.lock
