@@ -37,9 +37,10 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Verify the current major at github.com/astral-sh/setup-uv/releases
-      # before merging this workflow.
-      - uses: astral-sh/setup-uv@v8
+      # Pinned to a published release tag (astral-sh/setup-uv has no moving
+      # v8 major tag; v8.1.0 is the latest release). Bump from the releases
+      # page when updating.
+      - uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
 
